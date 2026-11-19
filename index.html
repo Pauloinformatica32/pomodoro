@@ -7,17 +7,7 @@
   <meta name="theme-color" content="#0b101b" />
   <title>Pomodoro Timer</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>" />
-  <script>
-    (function () {
-      try {
-        var stored = localStorage.getItem('pomodoro.theme.v1');
-        var theme = stored === 'light' || stored === 'dark'
-          ? stored
-          : (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-        document.documentElement.setAttribute('data-theme', theme);
-      } catch (e) { }
-    })();
-  </script>
+  <script src="./js/themes.js"></script>
   <link rel="stylesheet" href="./css/style.css" />
 </head>
 <body>
@@ -121,6 +111,12 @@
           <span data-i18n="settings.sound">Sound on completion</span>
           <input type="checkbox" id="soundInput" role="switch" checked />
         </label>
+      </fieldset>
+      <fieldset class="settings-group appearance-group">
+        <legend id="appearanceHeading" data-i18n="appearance.heading">Aparência</legend>
+        <p id="appearanceDescription" class="appearance-description" data-i18n="appearance.description">Escolha um tema. A mudança é imediata e salva automaticamente.</p>
+        <div id="themeOptions" class="theme-options" role="radiogroup" aria-labelledby="appearanceHeading" aria-describedby="appearanceDescription"></div>
+        <p id="themeError" class="appearance-error" data-i18n="appearance.error" role="status" hidden></p>
       </fieldset>
       <details class="language-picker">
         <summary>

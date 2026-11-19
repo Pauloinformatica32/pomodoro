@@ -3,7 +3,6 @@
   const STORAGE_KEY = 'pomodoro.settings.v1';
   const TASKS_KEY = 'pomodoro.tasks.v1';
   const STATE_KEY = 'pomodoro.state.v1';
-  const THEME_KEY = 'pomodoro.theme.v1';
 
   const RING_CIRCUMFERENCE = 2 * Math.PI * 135;
 
@@ -41,7 +40,6 @@
     startPauseBtn: document.getElementById('startPauseBtn'),
     resetBtn: document.getElementById('resetBtn'),
     skipBtn: document.getElementById('skipBtn'),
-    themeBtn: document.getElementById('themeBtn'),
     pomodoroCount: document.getElementById('pomodoroCount'),
     pomodoroDots: document.getElementById('pomodoroDots'),
     settingsBtn: document.getElementById('settingsBtn'),
@@ -60,26 +58,6 @@
   };
 
   el.ringFg.style.strokeDasharray = String(RING_CIRCUMFERENCE);
-
-  function updateThemeButton(theme) {
-    el.themeBtn.textContent = theme === 'light' ? '☾' : '☀';
-    const label = t(theme === 'light' ? 'theme.dark' : 'theme.light');
-    el.themeBtn.title = label;
-    el.themeBtn.setAttribute('aria-label', label);
-  }
-
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem(THEME_KEY, theme);
-    updateThemeButton(theme);
-  }
-
-  updateThemeButton(document.documentElement.getAttribute('data-theme') || 'dark');
-
-  el.themeBtn.addEventListener('click', () => {
-    const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-    applyTheme(current === 'light' ? 'dark' : 'light');
-  });
 
   function loadSettings() {
     try {
@@ -365,7 +343,7 @@
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.checked = task.done;
-      checkbox.setAttribute('aria-label', t('tasks.complete', { task: task.text }));
+      checkbox.setAttribute('aria-label', t(task.done ? 'tasks.incomplete' : 'tasks.complete', { task: task.text }));
       checkbox.addEventListener('change', () => {
         task.done = checkbox.checked;
         saveTasks();
@@ -407,7 +385,6 @@
   // Refresh only labels: keep time, running state, task DOM, and unsaved inputs.
   function translateDynamicText() {
     updateDisplay();
-    updateThemeButton(document.documentElement.getAttribute('data-theme') || 'dark');
     el.startPauseBtn.textContent = t(isRunning ? 'timer.pause' : 'timer.start');
     const status = isRunning ? 'status.running'
       : (secondsLeft < totalSeconds && secondsLeft > 0 ? 'status.paused' : 'status.ready');
@@ -416,7 +393,8 @@
     if (empty) empty.textContent = t('tasks.empty');
     el.taskList.querySelectorAll('.task-item').forEach((row) => {
       const task = row.querySelector('.task-text').textContent;
-      row.querySelector('input').setAttribute('aria-label', t('tasks.complete', { task }));
+      const checkbox = row.querySelector('input');
+      checkbox.setAttribute('aria-label', t(checkbox.checked ? 'tasks.incomplete' : 'tasks.complete', { task }));
       const button = row.querySelector('.task-delete');
       button.setAttribute('aria-label', t('tasks.delete', { task }));
       button.title = t('tasks.delete', { task });

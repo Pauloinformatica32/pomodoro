@@ -75,6 +75,21 @@ The application uses `localStorage` to save:
 
 No backend, account, or database is required.
 
+## Themes
+
+Settings → Appearance lets you choose the existing Dark or Light theme.
+The header button and the selector use the same controller and stay synchronized.
+Selections apply immediately and use the original `pomodoro.theme.v1` key.
+Without a valid saved preference, the initial theme follows the system setting.
+
+`js/themes.js` contains the theme registry and the application/persistence logic.
+It runs before the stylesheet to apply the initial theme before rendering.
+To add a future theme, register its unique `id`, translated `nameKey` and
+`actionKey`, and button `icon`; add those translations in `js/i18n.js`; then
+override the existing CSS variables in a `:root[data-theme="id"]` block.
+The settings options are generated from the registry. Only `dark` and `light`
+are registered today, with their original palettes unchanged.
+
 ## Languages
 
 Open Settings and expand **Idioma / Language** to choose Português (Brasil),

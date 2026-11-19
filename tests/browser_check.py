@@ -121,6 +121,12 @@ def main():
           window.uiErrors = [];
           addEventListener('error', e => uiErrors.push(e.message));
           addEventListener('unhandledrejection', e => uiErrors.push(String(e.reason)));
+          window.uiThemeBeforeStyles = null;
+          new MutationObserver(() => {
+            if (uiThemeBeforeStyles === null && document.querySelector('link[rel="stylesheet"]')) {
+              window.uiThemeBeforeStyles = document.documentElement.dataset.theme;
+            }
+          }).observe(document, { childList: true, subtree: true });
           const browserLanguage = new URLSearchParams(location.search).get('browserLanguage') || 'en-US';
           Object.defineProperty(navigator, 'language', { value: browserLanguage });
           Object.defineProperty(navigator, 'languages', { value: [browserLanguage] });
@@ -146,7 +152,7 @@ def main():
             time.sleep(.05)
         client.js('window.$ = id => document.getElementById(id)')
         assert client.js('$("timeDisplay").textContent') == '25:00'
-        client.js('document.documentElement.setAttribute("data-theme", "dark")')
+        client.js('PomodoroThemes.setTheme("dark")')
 
         def capture(name):
             # Let theme transitions settle before checking the final appearance.
@@ -258,12 +264,12 @@ def main():
 
             # Verify all translated strings in both themes and at narrow/landscape sizes.
             for theme in ['dark', 'light']:
-                client.js(f'document.documentElement.dataset.theme="{theme}"')
+                client.js(f'PomodoroThemes.setTheme("{theme}")')
                 for width, height in [(1440, 1000), (810, 900), (390, 844), (320, 568), (280, 640), (844, 390)]:
                     client.call('Emulation.setDeviceMetricsOverride', dict(width=width, height=height, deviceScaleFactor=1, mobile=False))
                     assert client.js('document.documentElement.scrollWidth <= document.documentElement.clientWidth'), f'{locale}: page overflow at {width}'
                     assert client.js('document.querySelector(".settings-panel").scrollWidth <= document.querySelector(".settings-panel").clientWidth'), f'{locale}: dialog overflow at {width}'
-                    assert client.js('Array.from(document.querySelectorAll(".mode-btn, .language-option, .language-summary, .settings-header h2, .brand h1")).every(node => node.scrollWidth <= node.clientWidth + 1)'), f'{locale}: clipped text at {width}'
+                    assert client.js('Array.from(document.querySelectorAll(".mode-btn, .language-option, .theme-option, .language-summary, .settings-header h2, .brand h1")).every(node => node.scrollWidth <= node.clientWidth + 1)'), f'{locale}: clipped text at {width}'
                     assert client.js('document.querySelector(".brand").getBoundingClientRect().right <= document.querySelector(".header-actions").getBoundingClientRect().left'), f'{locale}: overlapping header at {width}'
                     assert client.js('document.querySelector(".header-actions").getBoundingClientRect().right <= document.querySelector(".header").getBoundingClientRect().right + 1'), f'{locale}: overflowing header at {width}'
                     assert client.js('Array.from(document.querySelectorAll(".panel-heading")).every(row => { const items = Array.from(row.children).filter(node => node.getClientRects().length); return items.length < 2 || items[0].getBoundingClientRect().right <= items[1].getBoundingClientRect().left; })'), f'{locale}: overlapping panel labels at {width}'
@@ -320,6 +326,47 @@ def main():
         client.js('localStorage.setItem("pomodoro.language.v1", "invalid"); location.reload()')
         time.sleep(.2)
         assert client.js('document.documentElement.lang') == 'pt-BR'
+        # Checkbox labels describe the next action, including after language
+        # changes and reloads. Keep user text and all other task fields intact.
+        task_labels = {
+            'pt-BR': ('Marcar tarefa como concluída: ', 'Marcar tarefa como pendente: '),
+            'en': ('Mark task as completed: ', 'Mark task as incomplete: '),
+            'es': ('Marcar tarea como completada: ', 'Marcar tarea como pendiente: '),
+        }
+        client.js('window.$ = id => document.getElementById(id)')
+        original_tasks = client.js('JSON.parse(localStorage.getItem("pomodoro.tasks.v1"))')
+        original_text = original_tasks[1]['text']
+        for locale, actions in task_labels.items():
+            client.js(f'PomodoroI18n.setLanguage("{locale}")')
+            if locale == 'es':
+                assert client.js('document.querySelector("[data-mode=focus]").textContent') == 'Concentración'
+                assert client.js('document.querySelector(".side-note").textContent') == 'Concentrarse requiere práctica; no se trata de llegar a una meta.'
+            for done in [True, False]:
+                assert client.js('document.querySelectorAll(".task-item input")[1].checked') is not done
+                assert client.js('document.querySelectorAll(".task-item input")[1].getAttribute("aria-label")') == actions[0 if done else 1] + original_text
+                client.js('document.querySelectorAll(".task-item input")[1].click()')
+                assert client.js('document.querySelectorAll(".task-item input")[1].getAttribute("aria-label")') == actions[1 if done else 0] + original_text
+                # Updating the locale must also translate an already rendered
+                # checkbox without replacing task DOM or changing its state.
+                client.js('window.existingCheckbox = document.querySelectorAll(".task-item input")[1]')
+                for next_locale, next_actions in task_labels.items():
+                    client.js(f'PomodoroI18n.setLanguage("{next_locale}")')
+                    assert client.js('existingCheckbox === document.querySelectorAll(".task-item input")[1]')
+                    assert client.js('existingCheckbox.checked') is done
+                    assert client.js('existingCheckbox.getAttribute("aria-label")') == next_actions[1 if done else 0] + original_text
+                client.js(f'PomodoroI18n.setLanguage("{locale}")')
+                assert client.js('uiErrors') == []
+                client.call('Page.reload')
+                time.sleep(.2)
+                assert client.js('document.documentElement.lang') == locale
+                assert client.js('document.querySelectorAll(".task-item input")[1].checked') is done
+                assert client.js('document.querySelectorAll(".task-item input")[1].getAttribute("aria-label")') == actions[1 if done else 0] + original_text
+                assert client.js('document.querySelectorAll(".task-text")[1].textContent') == original_text
+                saved_tasks = client.js('JSON.parse(localStorage.getItem("pomodoro.tasks.v1"))')
+                expected_tasks = [dict(task) for task in original_tasks]
+                expected_tasks[1]['done'] = done
+                assert saved_tasks == expected_tasks
+                assert client.js('uiErrors') == []
         # Empty-state text is also dynamic, and task deletion still persists.
         client.js('window.$ = id => document.getElementById(id); document.querySelectorAll(".task-delete").forEach(button => button.click())')
         for locale in expected:
@@ -331,7 +378,93 @@ def main():
         assert client.js('uiAudioContexts') == 1
         assert client.js('document.documentElement.dataset.running') == 'false'
         assert client.js('uiErrors') == [], client.js('uiErrors')
-        print('PASS: all 3 languages, browser detection/fallback, live switching, localized notifications/ARIA/dynamic text, persistence, preserved drafts/data, storage failure, themes, responsive layout, timer regression, tasks, sound, and dialog keyboard navigation.')
+
+        # Both theme controls share the registry/controller and preserve session
+        # state, data and drafts. Changing the language only translates labels.
+        assert client.js('PomodoroThemes.themes.map(theme => theme.id)') == ['dark', 'light']
+        client.js('window.$ = id => document.getElementById(id); PomodoroThemes.setTheme("dark"); $("taskInput").value="Unsaved task"; $("startPauseBtn").click(); uiTick(); window.themeMarker = {}; window.themeSentinel = themeMarker; $("settingsBtn").click(); $("focusInput").value=53')
+        theme_clock = client.js('$("timeDisplay").textContent')
+        preserved = client.js('Object.fromEntries(["pomodoro.settings.v1", "pomodoro.tasks.v1", "pomodoro.state.v1"].map(key => [key, localStorage.getItem(key)]))')
+        theme_names = {'pt-BR': ['Escuro', 'Claro'], 'en': ['Dark', 'Light'], 'es': ['Oscuro', 'Claro']}
+        for locale, names in theme_names.items():
+            before = client.js('PomodoroThemes.getTheme()')
+            client.js(f'PomodoroI18n.setLanguage("{locale}")')
+            assert client.js('PomodoroThemes.getTheme()') == before
+            assert client.js('Array.from(document.querySelectorAll(".theme-option span")).map(node => node.textContent)') == names
+            for theme in ['dark', 'light']:
+                client.js(f'document.querySelector(\'#themeOptions input[value="{theme}"]\').click()')
+                assert client.js('document.documentElement.dataset.theme') == theme
+                assert client.js('PomodoroThemes.getTheme()') == theme
+                assert client.js('localStorage.getItem("pomodoro.theme.v1")') == theme
+                assert client.js('document.querySelector("#themeOptions input:checked").value') == theme
+                assert client.js('document.querySelectorAll(".theme-option.is-selected").length') == 1
+                assert client.js('document.querySelector(".theme-option.is-selected input").value') == theme
+                assert client.js('document.documentElement.lang') == locale
+                assert client.js('localStorage.getItem("pomodoro.language.v1")') == locale
+                assert client.js('$("themeBtn").title') == client.js(f'PomodoroI18n.t("theme.{"dark" if theme == "light" else "light"}")')
+                assert client.js('$("themeBtn").getAttribute("aria-label") === $("themeBtn").title')
+                assert client.js('$("timeDisplay").textContent') == theme_clock
+                assert client.js('document.documentElement.dataset.running') == 'true'
+                assert client.js('themeMarker === themeSentinel')
+                assert client.js('$("focusInput").value') == '53'
+                assert client.js('$("taskInput").value') == 'Unsaved task'
+                assert client.js('Object.fromEntries(Object.keys(' + json.dumps(preserved) + ').map(key => [key, localStorage.getItem(key)]))') == preserved
+            client.js('document.querySelector(".appearance-group").scrollIntoView({block:"center"})')
+            capture(f'appearance-{locale}-light.png')
+            # The existing header button must update the new selector too.
+            client.js('$("closeSettingsBtn").click(); $("themeBtn").click(); $("settingsBtn").click(); $("focusInput").value=53')
+            assert client.js('document.querySelector("#themeOptions input:checked").value') == 'dark'
+            assert client.js('PomodoroThemes.getTheme()') == 'dark'
+            assert client.js('document.documentElement.lang') == locale
+
+        client.call('Emulation.setDeviceMetricsOverride', dict(width=1440, height=1000, deviceScaleFactor=1, mobile=False))
+        client.js('document.querySelector(".appearance-group").scrollIntoView({block:"center"})')
+        capture('appearance-desktop-dark.png')
+
+        # Native radio keyboard interaction: arrows and Space.
+        client.js('document.querySelector("#themeOptions input[value=dark]").focus()')
+        client.call('Input.dispatchKeyEvent', {'type': 'keyDown', 'key': 'ArrowRight', 'code': 'ArrowRight', 'windowsVirtualKeyCode': 39})
+        assert client.js('PomodoroThemes.getTheme()') == 'light'
+        client.call('Input.dispatchKeyEvent', {'type': 'keyDown', 'key': 'ArrowLeft', 'code': 'ArrowLeft', 'windowsVirtualKeyCode': 37})
+        assert client.js('PomodoroThemes.getTheme()') == 'dark'
+        client.js('document.querySelector("#themeOptions input[value=light]").focus()')
+        for kind in ['keyDown', 'keyUp']:
+            client.call('Input.dispatchKeyEvent', {'type': kind, 'key': ' ', 'code': 'Space', 'windowsVirtualKeyCode': 32})
+        assert client.js('PomodoroThemes.getTheme()') == 'light'
+        assert not client.js('PomodoroThemes.setTheme("unregistered")')
+        assert client.js('PomodoroThemes.getTheme()') == 'light'
+
+        # A failed write must not prevent applying a theme or affect language.
+        client.js('window.nativeThemeSet = Storage.prototype.setItem; Storage.prototype.setItem = function(key, value) { if(key === "pomodoro.theme.v1") throw new Error("Blocked for test"); return nativeThemeSet.call(this, key, value); }; PomodoroThemes.setTheme("dark")')
+        assert client.js('document.documentElement.dataset.theme') == 'dark'
+        assert not client.js('$("themeError").hidden')
+        assert client.js('$("themeError").textContent === PomodoroI18n.t("appearance.error")')
+        client.js('Storage.prototype.setItem = nativeThemeSet; PomodoroThemes.setTheme("dark")')
+        assert client.js('$("themeError").hidden')
+        client.js('$("closeSettingsBtn").click(); $("startPauseBtn").click()')
+
+        # Legacy saved strings take priority over the opposite OS preference.
+        # With no saved choice (or an invalid one), use the system preference.
+        for saved_theme, system, expected_theme in [
+            ('dark', 'light', 'dark'), ('light', 'dark', 'light'),
+            (None, 'light', 'light'), (None, 'dark', 'dark'),
+            ('unregistered', 'light', 'light'),
+        ]:
+            if saved_theme is None:
+                client.js('localStorage.removeItem("pomodoro.theme.v1")')
+            else:
+                client.js(f'localStorage.setItem("pomodoro.theme.v1", "{saved_theme}")')
+            client.call('Emulation.setEmulatedMedia', {'features': [{'name': 'prefers-color-scheme', 'value': system}]})
+            client.call('Page.reload')
+            time.sleep(.2)
+            assert client.js('uiThemeBeforeStyles') == expected_theme
+            assert client.js('document.documentElement.dataset.theme') == expected_theme
+            assert client.js('PomodoroThemes.getTheme()') == expected_theme
+            assert client.js('document.querySelector("#themeOptions input:checked").value') == expected_theme
+            assert client.js('localStorage.getItem("pomodoro.theme.v1")') == saved_theme
+            assert client.js('document.documentElement.lang') == 'es'
+            assert client.js('uiErrors') == []
+        print('PASS: synchronized theme selector/button, theme persistence/legacy preferences, system detection before CSS, theme keyboard controls, theme/language independence, and existing timer/tasks/i18n/audio/notification/responsiveness regression checks.')
         print(f'Screenshots: {artifacts}')
     finally:
         if client:
