@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta data-i18n-content="app.description" name="description" content="A calmer space for focused work, with a Pomodoro timer, tasks and breaks at your own pace." />
+  <meta name="theme-color" content="#0b101b" />
   <title>Pomodoro Timer</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>" />
   <script>
@@ -21,100 +23,124 @@
 <body>
   <div class="app">
     <header class="header">
-      <button id="themeBtn" class="icon-btn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
-      <h1>Pomodoro Timer</h1>
-      <button id="settingsBtn" class="icon-btn" title="Settings" aria-label="Settings">⚙️</button>
-      <!-- <div class="header-actions">
-      </div> -->
+      <div class="brand"><span class="brand-mark" aria-hidden="true">◷</span><div><h1 data-i18n="app.name">Pomodoro Timer</h1><p data-i18n="brand.subtitle">A little structure. A lot more focus.</p></div></div>
+      <div class="header-actions">
+        <button id="themeBtn" class="icon-btn" title="Toggle theme" aria-label="Toggle theme">☀</button>
+        <button data-i18n-title="settings.open" data-i18n-aria-label="settings.open" id="settingsBtn" class="icon-btn" title="Settings" aria-label="Settings" aria-haspopup="dialog"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></svg></button>
+      </div>
     </header>
-    <div class="modes">
-      <button class="mode-btn active" data-mode="focus">Focus</button>
-      <button class="mode-btn" data-mode="short">Short Break</button>
-      <button class="mode-btn" data-mode="long">Long Break</button>
-    </div>
-    <main class="timer-card">
-      <svg class="progress-ring" viewBox="0 0 300 300">
-        <circle class="progress-ring__bg" cx="150" cy="150" r="135" />
-        <circle class="progress-ring__fg" id="ringFg" cx="150" cy="150" r="135" />
-      </svg>
-      <div class="timer-display">
-        <div class="time" id="timeDisplay">25:00</div>
-        <div class="session-label" id="sessionLabel">Focus time</div>
-        <div class="pomodoroLabel">
-          <svg xmlns="http://www.w3.org/2000/svg" width="1.3em" height="1.3em" viewBox="0 0 48 48">
-            <path fill="#45413c" d="M5.97 44.65a18.03 2.35 0 1 0 36.06 0a18.03 2.35 0 1 0-36.06 0" opacity=".15" />
-            <path fill="#ff6242" d="M28.85 9.51h-9.7c-9 0-16.32 6.66-16.32 15.68C2.83 35.22 11 44 21 44h6c10 0 18.18-8.78 18.18-18.81c-.01-9.02-7.32-15.68-16.33-15.68" />
-            <path fill="#e04122" d="M27 38.64h-6c-9.11 0-16.62-7.22-18-16a16 16 0 0 0-.23 2.6C2.83 35.22 11 44 21 44h6c10 0 18.18-8.78 18.18-18.81a16 16 0 0 0-.23-2.6C43.61 31.42 36.1 38.64 27 38.64" />
-            <path fill="none" stroke="#45413c" stroke-linecap="round" stroke-linejoin="round" d="M28.85 9.51h-9.7c-9 0-16.32 6.66-16.32 15.68C2.83 35.22 11 44 21 44h6c10 0 18.18-8.78 18.18-18.81c-.01-9.02-7.32-15.68-16.33-15.68" />
-            <path fill="#6dd627" d="M24.19 15.93a31.8 31.8 0 0 1 8.65 3.78a.78.78 0 0 0 1.18-.8a9.33 9.33 0 0 0-2.94-5.6a.76.76 0 0 1 .08-1.24a14.9 14.9 0 0 1 4.14-1.35a.78.78 0 0 0 .21-1.46a10.35 10.35 0 0 0-6-1.22a8 8 0 0 0-4.91 2.37a.8.8 0 0 1-1.16 0A8 8 0 0 0 18.51 8a10.35 10.35 0 0 0-6 1.22a.78.78 0 0 0 .21 1.46a14.9 14.9 0 0 1 4.14 1.35a.76.76 0 0 1 .08 1.24A9.33 9.33 0 0 0 14 18.91a.78.78 0 0 0 1.18.8a31.8 31.8 0 0 1 8.65-3.78a.8.8 0 0 1 .36 0" />
-            <path fill="#9ceb60" d="M12.7 10.72c.38.07.79.17 1.2.27a9.6 9.6 0 0 1 4.61-.6a8 8 0 0 1 4.91 2.37a.8.8 0 0 0 1.16 0a8 8 0 0 1 4.91-2.37a9.6 9.6 0 0 1 4.61.6c.41-.1.82-.2 1.2-.27a.78.78 0 0 0 .21-1.46a10.35 10.35 0 0 0-6-1.22a8 8 0 0 0-4.91 2.37a.8.8 0 0 1-1.16 0A8 8 0 0 0 18.51 8a10.35 10.35 0 0 0-6 1.22a.78.78 0 0 0 .19 1.5" />
-            <path fill="none" stroke="#45413c" stroke-linecap="round" stroke-linejoin="round" d="M24.19 15.93a31.8 31.8 0 0 1 8.65 3.78a.78.78 0 0 0 1.18-.8a9.33 9.33 0 0 0-2.94-5.6a.76.76 0 0 1 .08-1.24a14.9 14.9 0 0 1 4.14-1.35a.78.78 0 0 0 .21-1.46a10.35 10.35 0 0 0-6-1.22a8 8 0 0 0-4.91 2.37a.8.8 0 0 1-1.16 0A8 8 0 0 0 18.51 8a10.35 10.35 0 0 0-6 1.22a.78.78 0 0 0 .21 1.46a14.9 14.9 0 0 1 4.14 1.35a.76.76 0 0 1 .08 1.24A9.33 9.33 0 0 0 14 18.91a.78.78 0 0 0 1.18.8a31.8 31.8 0 0 1 8.65-3.78a.8.8 0 0 1 .36 0" />
-            <path fill="#6dd627" stroke="#45413c" stroke-linecap="round" stroke-linejoin="round" d="M22.43 13.14a9.87 9.87 0 0 1 2.37-6.73A1.46 1.46 0 0 1 25.85 6a2.26 2.26 0 0 1 1 .22a1.1 1.1 0 0 1 .39 1.69a17.3 17.3 0 0 0-2.11 5.25" />
-          </svg>
+    <div class="intro"><p class="eyebrow" data-i18n="intro.eyebrow">LESS DISTRACTION, MORE INTENTION</p><h2><span data-i18n="intro.title">Make room for</span> <span class="intro-highlight" data-i18n="intro.highlight">deep work.</span></h2><p data-i18n="intro.description">Choose a task. Find your rhythm. Take a breath.</p></div>
+    <main class="workspace">
+      <section data-i18n-aria-label="timer.region" class="focus-panel panel" aria-label="Session timer">
+        <div class="panel-heading"><h2 data-i18n="timer.heading">Your focus space</h2><span class="session-status" id="sessionStatus" role="status">Ready when you are</span></div>
+        <div data-i18n-aria-label="timer.modeGroup" class="modes" role="group" aria-label="Session mode">
+          <button class="mode-btn active" data-i18n="mode.focus" data-mode="focus" aria-pressed="true">Focus</button>
+          <button class="mode-btn" data-i18n="mode.short" data-mode="short" aria-pressed="false">Short Break</button>
+          <button class="mode-btn" data-i18n="mode.long" data-mode="long" aria-pressed="false">Long Break</button>
         </div>
-      </div>
+        <div class="timer-card">
+          <svg class="progress-ring" viewBox="0 0 300 300" aria-hidden="true">
+            <circle class="progress-ring__ticks" cx="150" cy="150" r="122" />
+            <circle class="progress-ring__bg" cx="150" cy="150" r="135" />
+            <circle class="progress-ring__fg" id="ringFg" cx="150" cy="150" r="135" />
+          </svg>
+          <div class="timer-display">
+            <div data-i18n-aria-label="timer.remaining" class="time" id="timeDisplay" role="timer" aria-label="Time remaining">25:00</div>
+            <div class="session-label" id="sessionLabel">Focus time</div>
+            <div data-i18n="timer.mantra" class="pomodoroLabel">ONE THING AT A TIME</div>
+          </div>
+        </div>
+        <div class="controls">
+          <button data-i18n-title="timer.reset" data-i18n-aria-label="timer.reset" id="resetBtn" class="ctrl-btn secondary" title="Reset" aria-label="Reset session">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1.7em" height="1.7em" viewBox="0 0 512 512">
+              <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="42" d="M320 146s24.36-12-64-12a160 160 0 1 0 160 160" />
+              <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="42" d="m256 58l80 80l-80 80" />
+            </svg>
+          </button>
+          <button id="startPauseBtn" class="ctrl-btn primary">Start</button>
+          <button data-i18n-title="timer.skip" data-i18n-aria-label="timer.skip" id="skipBtn" class="ctrl-btn secondary" title="Skip" aria-label="Skip session">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1.7em" height="1.7em" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M19 12c0 .228-.106.45-.293.57l-6.86 4.348a.5.5 0 0 1-.277.082c-.315 0-.57-.291-.57-.651v-4.35c0 .23-.106.451-.293.57l-6.86 4.35A.5.5 0 0 1 3.57 17c-.315 0-.57-.291-.57-.651V7.651c0-.11.025-.22.072-.316c.152-.314.5-.428.775-.253l6.86 4.349c.093.059.17.147.221.253c.049.1.072.209.072.315V7.651c0-.11.025-.22.072-.316c.152-.314.5-.428.775-.253l6.86 4.349c.093.059.17.147.221.253c.049.1.072.209.072.315V8a1 1 0 0 1 2 0v8c0 .552-.5 1-1 1s-1-.448-1-1z" />
+            </svg>
+          </button>
+        </div>
+        <p data-i18n="timer.note" class="timer-note">Small steps. Meaningful progress.</p>
+      </section>
+      <aside data-i18n-aria-label="tasks.region" class="side-panel" aria-label="Tasks and daily progress">
+        <section class="tasks panel" aria-labelledby="tasksHeading">
+          <div class="panel-heading"><h2 data-i18n="tasks.heading" id="tasksHeading">Your tasks</h2><span data-i18n="tasks.tag" class="section-tag">ONE AT A TIME</span></div>
+          <p data-i18n="tasks.description" class="section-description">Clear your mind. Give your next step a name.</p>
+          <form id="taskForm" class="task-form">
+            <label data-i18n="tasks.new" class="sr-only" for="taskInput">New task</label>
+            <input data-i18n-placeholder="tasks.placeholder" type="text" id="taskInput" placeholder="What needs your focus?" maxlength="120" autocomplete="off" />
+            <button data-i18n-title="tasks.add" data-i18n-aria-label="tasks.add" type="submit" aria-label="Add task" title="Add task">+</button>
+          </form>
+          <ul id="taskList" class="task-list"></ul>
+        </section>
+        <section class="pomodoro panel" aria-labelledby="progressHeading">
+          <div class="panel-heading"><h2 data-i18n="progress.heading" id="progressHeading">A little better, every day</h2><span class="progress-icon" aria-hidden="true">◷</span></div>
+          <div class="pomodoro-count"><span id="pomodoroCount">0</span><div><span data-i18n="progress.completed">Pomodoros completed</span><span data-i18n="progress.caption" class="count-caption">Today’s focused sessions</span></div></div>
+          <div class="cycle-row"><span data-i18n="progress.cycle">Current cycle</span><div data-i18n-aria-label="progress.cycleLabel" class="dots" id="pomodoroDots" aria-label="Cycle progress"></div></div>
+        </section>
+        <p data-i18n="progress.note" class="side-note">Focus is a practice, not a finish line.</p>
+      </aside>
     </main>
-    <div class="controls">
-      <button id="resetBtn" class="ctrl-btn secondary" title="Reset">
-        <svg xmlns="http://www.w3.org/2000/svg" width="1.7em" height="1.7em" viewBox="0 0 512 512">
-          <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="42" d="M320 146s24.36-12-64-12a160 160 0 1 0 160 160" />
-          <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="42" d="m256 58l80 80l-80 80" />
-        </svg>
-      </button>
-      <button id="startPauseBtn" class="ctrl-btn primary">Start</button>
-      <button id="skipBtn" class="ctrl-btn secondary" title="Skip">
-        <svg xmlns="http://www.w3.org/2000/svg" width="1.7em" height="1.7em" viewBox="0 0 24 24">
-          <path fill="currentColor" d="M19 12c0 .228-.106.45-.293.57l-6.86 4.348a.5.5 0 0 1-.277.082c-.315 0-.57-.291-.57-.651v-4.35c0 .23-.106.451-.293.57l-6.86 4.35A.5.5 0 0 1 3.57 17c-.315 0-.57-.291-.57-.651V7.651c0-.11.025-.22.072-.316c.152-.314.5-.428.775-.253l6.86 4.349c.093.059.17.147.221.253c.049.1.072.209.072.315V7.651c0-.11.025-.22.072-.316c.152-.314.5-.428.775-.253l6.86 4.349c.093.059.17.147.221.253c.049.1.072.209.072.315V8a1 1 0 0 1 2 0v8c0 .552-.5 1-1 1s-1-.448-1-1z" />
-        </svg>
-      </button>
-    </div>
-    <div class="pomodoro">
-      <div class="pomodoro-count"> Pomodoros completed today: <span id="pomodoroCount"> 0 </span>
-      </div>
-      <div class="dots" id="pomodoroDots"></div>
-    </div>
-    <section class="tasks">
-      <h2>Tasks</h2>
-      <form id="taskForm" class="task-form">
-        <input type="text" id="taskInput" placeholder="Add a task..." maxlength="120" autocomplete="off" />
-        <button type="submit">+</button>
-      </form>
-      <ul id="taskList" class="task-list"></ul>
-    </section>
+    <footer data-i18n="footer" class="footer">A calmer way to get things done.</footer>
   </div>
   <div id="settingsOverlay" class="overlay hidden">
-    <div class="settings-panel">
+    <div class="settings-panel panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
       <div class="settings-header">
-        <h2>Settings</h2>
-        <button id="closeSettingsBtn" class="icon-btn" aria-label="Close">✕</button>
+        <div><p data-i18n="settings.eyebrow" class="eyebrow">MAKE IT YOURS</p><h2 data-i18n="settings.heading" id="settingsTitle">Your rhythm</h2></div>
+        <button data-i18n-aria-label="settings.close" data-i18n-title="settings.close" id="closeSettingsBtn" class="icon-btn" aria-label="Close">✕</button>
       </div>
-      <label class="setting-row">
-        <span>Focus (min)</span>
-        <input type="number" id="focusInput" min="1" max="120" value="25" />
-      </label>
-      <label class="setting-row">
-        <span>Short break (min)</span>
-        <input type="number" id="shortInput" min="1" max="60" value="5" />
-      </label>
-      <label class="setting-row">
-        <span>Long break (min)</span>
-        <input type="number" id="longInput" min="1" max="90" value="15" />
-      </label>
-      <label class="setting-row">
-        <span>Pomodoros before long break</span>
-        <input type="number" id="cyclesInput" min="1" max="12" value="4" />
-      </label>
-      <label class="setting-row switch-row">
-        <span>Auto-start next session</span>
-        <input type="checkbox" id="autoStartInput" />
-      </label>
-      <label class="setting-row switch-row">
-        <span>Sound on completion</span>
-        <input type="checkbox" id="soundInput" checked />
-      </label>
-      <button id="saveSettingsBtn" class="ctrl-btn primary full-width">Save</button>
+      <p data-i18n="settings.description" class="section-description">Set a pace that works for you.</p>
+      <fieldset class="settings-group"><legend data-i18n="settings.durations">Session durations</legend>
+        <label class="setting-row">
+          <span data-i18n="settings.focus">Focus (min)</span>
+          <input type="number" id="focusInput" min="1" max="120" value="25" />
+        </label>
+        <label class="setting-row">
+          <span data-i18n="settings.short">Short break (min)</span>
+          <input type="number" id="shortInput" min="1" max="60" value="5" />
+        </label>
+        <label class="setting-row">
+          <span data-i18n="settings.long">Long break (min)</span>
+          <input type="number" id="longInput" min="1" max="90" value="15" />
+        </label>
+        <label class="setting-row">
+          <span data-i18n="settings.cycles">Pomodoros before long break</span>
+          <input type="number" id="cyclesInput" min="1" max="12" value="4" />
+        </label>
+      </fieldset>
+      <fieldset class="settings-group"><legend data-i18n="settings.preferences">Preferences</legend>
+        <label class="setting-row switch-row">
+          <span data-i18n="settings.autoStart">Auto-start next session</span>
+          <input type="checkbox" id="autoStartInput" role="switch" />
+        </label>
+        <label class="setting-row switch-row">
+          <span data-i18n="settings.sound">Sound on completion</span>
+          <input type="checkbox" id="soundInput" role="switch" checked />
+        </label>
+      </fieldset>
+      <details class="language-picker">
+        <summary>
+          <svg class="icon language-globe" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg>
+          <span class="language-summary"><span data-i18n="language.label">Idioma / Language</span><span id="currentLanguage" lang="pt-BR">Português (Brasil)</span></span>
+          <svg class="icon language-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
+        </summary>
+        <p class="language-description" data-i18n="language.description">A mudança é imediata e salva automaticamente.</p>
+        <div class="language-options" role="group" data-i18n-aria-label="language.options" aria-label="Escolher idioma">
+          <button type="button" class="language-option" data-language="pt-BR" lang="pt-BR" aria-pressed="true"><span>Português (Brasil)</span><span class="language-code" aria-hidden="true">PT-BR</span></button>
+          <button type="button" class="language-option" data-language="en" lang="en" aria-pressed="false"><span>English</span><span class="language-code" aria-hidden="true">EN</span></button>
+          <button type="button" class="language-option" data-language="es" lang="es" aria-pressed="false"><span>Español</span><span class="language-code" aria-hidden="true">ES</span></button>
+        </div>
+        <p id="languageError" class="language-error" data-i18n="language.error" role="status" hidden></p>
+      </details>
+      <p data-i18n="settings.hint" class="settings-hint">Saving restarts the current session with your settings.</p>
+      <button data-i18n="settings.save" id="saveSettingsBtn" class="ctrl-btn primary full-width">Save settings</button>
     </div>
   </div>
+  <script src="./js/i18n.js"></script>
   <script src="./js/script.js"></script>
 </body>
 </html>

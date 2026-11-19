@@ -1,4 +1,5 @@
 (() => {
+  const { t } = window.PomodoroI18n;
   const STORAGE_KEY = 'pomodoro.settings.v1';
   const TASKS_KEY = 'pomodoro.tasks.v1';
   const STATE_KEY = 'pomodoro.state.v1';
@@ -16,15 +17,9 @@
   };
 
   const modeColors = {
-    focus: '#e85c4a',
-    short: '#4aa8e8',
-    long: '#7c5ce8',
-  };
-
-  const modeLabels = {
-    focus: 'Focus time',
-    short: 'Short break',
-    long: 'Long break',
+    focus: 'var(--focus)',
+    short: 'var(--short)',
+    long: 'var(--long)',
   };
 
   let settings = loadSettings();
@@ -41,6 +36,7 @@
     modeButtons: document.querySelectorAll('.mode-btn'),
     timeDisplay: document.getElementById('timeDisplay'),
     sessionLabel: document.getElementById('sessionLabel'),
+    sessionStatus: document.getElementById('sessionStatus'),
     ringFg: document.getElementById('ringFg'),
     startPauseBtn: document.getElementById('startPauseBtn'),
     resetBtn: document.getElementById('resetBtn'),
@@ -66,8 +62,8 @@
   el.ringFg.style.strokeDasharray = String(RING_CIRCUMFERENCE);
 
   function updateThemeButton(theme) {
-    el.themeBtn.textContent = theme === 'light' ? '🌙' : '☀️';
-    const label = theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
+    el.themeBtn.textContent = theme === 'light' ? '☾' : '☀';
+    const label = t(theme === 'light' ? 'theme.dark' : 'theme.light');
     el.themeBtn.title = label;
     el.themeBtn.setAttribute('aria-label', label);
   }
@@ -148,10 +144,10 @@
 
   function updateDisplay() {
     el.timeDisplay.textContent = formatTime(secondsLeft);
-    el.sessionLabel.textContent = modeLabels[mode];
+    el.sessionLabel.textContent = t(`session.${mode}`);
     const progress = totalSeconds === 0 ? 0 : secondsLeft / totalSeconds;
     el.ringFg.style.strokeDashoffset = String(RING_CIRCUMFERENCE * (1 - progress));
-    document.title = `${formatTime(secondsLeft)} · ${modeLabels[mode]}`;
+    document.title = `${formatTime(secondsLeft)} · ${t(`session.${mode}`)}`;
   }
 
   function setMode(newMode, { resetTimer = true } = {}) {
@@ -159,11 +155,13 @@
     document.documentElement.style.setProperty('--accent', modeColors[mode]);
     el.modeButtons.forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.mode === mode);
+      btn.setAttribute('aria-pressed', String(btn.dataset.mode === mode));
     });
     if (resetTimer) {
       pauseTimer();
       totalSeconds = minutesFor(mode);
       secondsLeft = totalSeconds;
+      el.sessionStatus.textContent = t('status.ready');
       updateDisplay();
     }
   }
@@ -206,8 +204,8 @@
   function notify() {
     playChime();
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(modeLabels[mode] + ' finished', {
-        body: mode === 'focus' ? 'Time for a break 🎉' : 'Time to get back to work 💪',
+      new Notification(t(`notification.${mode}`), {
+        body: t(mode === 'focus' ? 'notification.break' : 'notification.work'),
       });
     }
   }
@@ -246,13 +244,17 @@
       Notification.requestPermission();
     }
     isRunning = true;
-    el.startPauseBtn.textContent = 'Pause';
+    document.documentElement.dataset.running = 'true';
+    el.sessionStatus.textContent = t('status.running');
+    el.startPauseBtn.textContent = t('timer.pause');
     intervalId = setInterval(tick, 1000);
   }
 
   function pauseTimer() {
     isRunning = false;
-    el.startPauseBtn.textContent = 'Start';
+    document.documentElement.dataset.running = 'false';
+    el.sessionStatus.textContent = t(secondsLeft < totalSeconds && secondsLeft > 0 ? 'status.paused' : 'status.ready');
+    el.startPauseBtn.textContent = t('timer.start');
     if (intervalId) {
       clearInterval(intervalId);
       intervalId = null;
@@ -268,6 +270,7 @@
     pauseTimer();
     totalSeconds = minutesFor(mode);
     secondsLeft = totalSeconds;
+    el.sessionStatus.textContent = t('status.ready');
     updateDisplay();
   }
 
@@ -297,11 +300,34 @@
     el.autoStartInput.checked = settings.autoStart;
     el.soundInput.checked = settings.sound;
     el.settingsOverlay.classList.remove('hidden');
+    document.querySelector('.app').inert = true;
+    document.body.style.overflow = 'hidden';
+    el.closeSettingsBtn.focus();
   }
 
   function closeSettings() {
     el.settingsOverlay.classList.add('hidden');
+    document.querySelector('.app').inert = false;
+    document.body.style.overflow = '';
+    el.settingsBtn.focus();
   }
+
+  // Keep keyboard navigation inside the open settings dialog.
+  el.settingsOverlay.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeSettings();
+    if (e.key !== 'Tab') return;
+    const controls = [...el.settingsOverlay.querySelectorAll('button, input, summary')]
+      .filter((control) => control.getClientRects().length > 0);
+    const first = controls[0];
+    const last = controls[controls.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  });
 
   el.settingsBtn.addEventListener('click', openSettings);
   el.closeSettingsBtn.addEventListener('click', closeSettings);
@@ -328,7 +354,7 @@
     if (tasks.length === 0) {
       const empty = document.createElement('li');
       empty.className = 'task-empty';
-      empty.textContent = 'No tasks yet — add your first one!';
+      empty.textContent = t('tasks.empty');
       el.taskList.appendChild(empty);
       return;
     }
@@ -339,6 +365,7 @@
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.checked = task.done;
+      checkbox.setAttribute('aria-label', t('tasks.complete', { task: task.text }));
       checkbox.addEventListener('change', () => {
         task.done = checkbox.checked;
         saveTasks();
@@ -352,7 +379,8 @@
       const del = document.createElement('button');
       del.className = 'task-delete';
       del.textContent = '✕';
-      del.setAttribute('aria-label', 'Delete task');
+      del.setAttribute('aria-label', t('tasks.delete', { task: task.text }));
+      del.title = t('tasks.delete', { task: task.text });
       del.addEventListener('click', () => {
         tasks = tasks.filter((t) => t.id !== task.id);
         saveTasks();
@@ -376,10 +404,32 @@
     renderTasks();
   });
 
+  // Refresh only labels: keep time, running state, task DOM, and unsaved inputs.
+  function translateDynamicText() {
+    updateDisplay();
+    updateThemeButton(document.documentElement.getAttribute('data-theme') || 'dark');
+    el.startPauseBtn.textContent = t(isRunning ? 'timer.pause' : 'timer.start');
+    const status = isRunning ? 'status.running'
+      : (secondsLeft < totalSeconds && secondsLeft > 0 ? 'status.paused' : 'status.ready');
+    el.sessionStatus.textContent = t(status);
+    const empty = el.taskList.querySelector('.task-empty');
+    if (empty) empty.textContent = t('tasks.empty');
+    el.taskList.querySelectorAll('.task-item').forEach((row) => {
+      const task = row.querySelector('.task-text').textContent;
+      row.querySelector('input').setAttribute('aria-label', t('tasks.complete', { task }));
+      const button = row.querySelector('.task-delete');
+      button.setAttribute('aria-label', t('tasks.delete', { task }));
+      button.title = t('tasks.delete', { task });
+    });
+  }
+
+  document.addEventListener('pomodoro:languagechange', translateDynamicText);
+
   setMode('focus', { resetTimer: false });
   totalSeconds = minutesFor(mode);
   secondsLeft = totalSeconds;
   updateDisplay();
   renderDots();
   renderTasks();
+  translateDynamicText();
 })();

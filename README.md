@@ -27,6 +27,7 @@ The application helps organize focused work sessions and breaks using the Pomodo
 - Automatic system theme detection
 - Settings, tasks, progress, and theme saved in `localStorage`
 - Responsive layout
+- Portuguese (Brazil), English and Spanish, with instant language switching
 
 ## Technologies
 
@@ -73,6 +74,28 @@ The application uses `localStorage` to save:
 - Selected theme
 
 No backend, account, or database is required.
+
+## Languages
+
+Open Settings and expand **Idioma / Language** to choose Português (Brasil),
+English or Español. The selection applies immediately, without restarting the
+timer or saving other settings, and is stored in `pomodoro.language.v1`.
+On the first visit, the app uses the browser language (`pt`, `en` or `es`,
+including regional variants), falling back to Brazilian Portuguese.
+
+`js/i18n.js` contains a separate dictionary for each language, a `t(key, values)`
+helper, and translation of HTML marked with `data-i18n` attributes. Missing keys
+fall back to Portuguese. `js/script.js` refreshes dynamic labels and notifications
+using the same helper. Task names are user content and are never translated.
+The document's `lang` attribute follows the selected language.
+
+## Local verification
+
+With Python 3 and Chrome installed, run `python tests/browser_check.py`.
+The test uses an isolated temporary browser profile, verifies the timer, tasks,
+themes, language detection, live translations, persistence and responsive layout,
+and stores screenshots in the temporary folder printed at the end.
+Browser notifications are simulated; audio checks verify Web Audio creation.
 
 ## Screenshot
 
